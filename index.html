@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Elettrico Avanzato</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            transition: transform 0.5s;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            border-color: #74ebd5;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6DD5FA, #2980B9);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #2980B9, #6DD5FA);
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.4em;
+            color: #2980B9;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .hidden {
+            display: none;
+        }
+        #chart-container {
+            margin-top: 20px;
+            width: 100%;
+            height: 300px;
+        }
+        #home-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="home">
+    <h1>Calcolatore Elettrico</h1>
+    <a href="spiegazioni.html" target="_blank">
+        <img id="home-image" src="/mnt/data/A_visually_appealing_illustration_related_to_elect.png" alt="Spiegazione Calcoli">
+    </a>
+    <button onclick="showCalcolatore('voltaggio')">Calcolo Voltaggio</button>
+    <button onclick="showCalcolatore('intensita')">Calcolo Intensità</button>
+    <button onclick="showCalcolatore('resistenza')">Calcolo Resistenza</button>
+</div>
+
+<div class="container hidden" id="calcolatore-voltaggio">
+    <h1>Calcolo del Voltaggio</h1>
+    <label for="intensita-voltaggio">Intensità (I) in Ampere:</label>
+    <input type="number" id="intensita-voltaggio" placeholder="Inserisci l'intensità">
+    <label for="resistenza-voltaggio">Resistenza (R) in Ohm:</label>
+    <input type="number" id="resistenza-voltaggio" placeholder="Inserisci la resistenza">
+    <button onclick="calcolaVoltaggio()">Calcola</button>
+    <div class="result" id="risultato-voltaggio"></div>
+    <button onclick="goBack()">Torna alla Home</button>
+    <div id="chart-container">
+        <canvas id="chart-voltaggio"></canvas>
+    </div>
+</div>
+
+<div class="container hidden" id="calcolatore-intensita">
+    <h1>Calcolo dell'Intensità</h1>
+    <label for="voltaggio-intensita">Voltaggio (V) in Volt:</label>
+    <input type="number" id="voltaggio-intensita" placeholder="Inserisci il voltaggio">
+    <label for="resistenza-intensita">Resistenza (R) in Ohm:</label>
+    <input type="number" id="resistenza-intensita" placeholder="Inserisci la resistenza">
+    <button onclick="calcolaIntensita()">Calcola</button>
+    <div class="result" id="risultato-intensita"></div>
+    <button onclick="goBack()">Torna alla Home</button>
+    <div id="chart-container">
+        <canvas id="chart-intensita"></canvas>
+    </div>
+</div>
+
+<div class="container hidden" id="calcolatore-resistenza">
+    <h1>Calcolo della Resistenza</h1>
+    <label for="voltaggio-resistenza">Voltaggio (V) in Volt:</label>
+    <input type="number" id="voltaggio-resistenza" placeholder="Inserisci il voltaggio">
+    <label for="intensita-resistenza">Intensità (I) in Ampere:</label>
+    <input type="number" id="intensita-resistenza" placeholder="Inserisci l'intensità">
+    <button onclick="calcolaResistenza()">Calcola</button>
+    <div class="result" id="risultato-resistenza"></div>
+    <button onclick="goBack()">Torna alla Home</button>
+    <div id="chart-container">
+        <canvas id="chart-resistenza"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            goBack();
+        } else if (event.key === '1') {
+            showCalcolatore('voltaggio');
+        } else if (event.key === '2') {
+            showCalcolatore('intensita');
+        } else if (event.key === '3') {
+            showCalcolatore('resistenza');
+        }
+    });
+
+    function showCalcolatore(type) {
+        document.getElementById('home').classList.add('hidden');
+        document.getElementById(`calcolatore-${type}`).classList.remove('hidden');
+        document.getElementById(`risultato-${type}`).innerHTML = "";
+
+        const ctx = document.getElementById(`chart-${type}`).getContext('2d');
+        window.myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: type === 'voltaggio' ? 'Voltaggio (V)' : type === 'intensita' ? 'Intensità (A)' : 'Resistenza (Ω)',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Valori'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: type === 'voltaggio' ? 'Voltaggio (V)' : type === 'intensita' ? 'Intensità (A)' : 'Resistenza (Ω)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function goBack() {
+        document.getElementById('home').classList.remove('hidden');
+        document.querySelectorAll('.container:not(#home)').forEach(el => el.classList.add('hidden'));
+    }
+
+    function calcolaVoltaggio() {
+        var intensita = parseFloat(document.getElementById("intensita-voltaggio").value);
+        var resistenza = parseFloat(document.getElementById("resistenza-voltaggio").value);
+        if (isNaN(intensita) || isNaN(resistenza)) {
+            document.getElementById("risultato-voltaggio").innerHTML = "Inserisci valori validi!";
+            return;
+        }
+        var voltaggio = intensita * resistenza;
+        document.getElementById("risultato-voltaggio").innerHTML = "Il voltaggio è: " + voltaggio.toFixed(2) + " V";
+        document.getElementById("risultato-voltaggio").style.opacity = 1;
+        updateChart('voltaggio', intensita, resistenza, voltaggio);
+    }
+
+    function calcolaIntensita() {
+        var voltaggio = parseFloat(document.getElementById("voltaggio-intensita").value);
+        var resistenza = parseFloat(document.getElementById("resistenza-intensita").value);
+        if (isNaN(voltaggio) || isNaN(resistenza)) {
+            document.getElementById("risultato-intensita").innerHTML = "Inserisci valori validi!";
+            return;
+        }
+        var intensita = voltaggio / resistenza;
+        document.getElementById("risultato-intensita").innerHTML = "L'intensità è: " + intensita.toFixed(2) + " A";
+        document.getElementById("risultato-intensita").style.opacity = 1;
+        updateChart('intensita', voltaggio, resistenza, intensita);
+    }
+
+    function calcolaResistenza() {
+        var voltaggio = parseFloat(document.getElementById("voltaggio-resistenza").value);
+        var intensita = parseFloat(document.getElementById("intensita-resistenza").value);
+        if (isNaN(voltaggio) || isNaN(intensita)) {
+            document.getElementById("risultato-resistenza").innerHTML = "Inserisci valori validi!";
+            return;
+        }
+        var resistenza = voltaggio / intensita;
+        document.getElementById("risultato-resistenza").innerHTML = "La resistenza è: " + resistenza.toFixed(2) + " Ω";
+        document.getElementById("risultato-resistenza").style.opacity = 1;
+        updateChart('resistenza', voltaggio, intensita, resistenza);
+    }
+
+    function updateChart(type, val1, val2, result) {
+        const chart = window.myChart;
+        let label;
+        
+        if (type === 'voltaggio') {
+            label = `I: ${val1} A, R: ${val2} Ω`;
+        } else if (type === 'intensita') {
+            label = `V: ${val1} V, R: ${val2} Ω`;
+        } else if (type === 'resistenza') {
+            label = `V: ${val1} V, I: ${val2} A`;
+        }
+        
+        chart.data.labels.push(label);
+        chart.data.datasets[0].data.push(result);
+        chart.update();
+    }
+
+    const inputFields = [
+        {inputId: "intensita-voltaggio", nextId: "resistenza-voltaggio", calcFunc: calcolaVoltaggio},
+        {inputId: "resistenza-voltaggio", nextId: null, calcFunc: calcolaVoltaggio},
+        {inputId: "voltaggio-intensita", nextId: "resistenza-intensita", calcFunc: calcolaIntensita},
+        {inputId: "resistenza-intensita", nextId: null, calcFunc: calcolaIntensita},
+        {inputId: "voltaggio-resistenza", nextId: "intensita-resistenza", calcFunc: calcolaResistenza},
+        {inputId: "intensita-resistenza", nextId: null, calcFunc: calcolaResistenza}
+    ];
+
+    inputFields.forEach(field => {
+        document.getElementById(field.inputId).addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                if (field.nextId) {
+                    document.getElementById(field.nextId).focus();
+                } else {
+                    field.calcFunc();
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
